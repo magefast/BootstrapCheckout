@@ -1,0 +1,14 @@
+<?php /** @var $block \Dragonfly\BootstrapCheckout\Block\OrderSuccess */ ?>
+<div class="checkout-success">
+    <?php if ($block->getOrderId()) :?>
+        <p><?= __('Your order number is: <strong>%1<strong>', $block->getOrderId()) ?></p>
+    <?php endif;?>
+    <div class="actions-toolbar">
+        <div class="primary">
+            <br/><br/><br/><br/><br/><br/>
+            <a class="action primary continue" href="/"><span><?= $block->escapeHtml(__('Continue Shopping')) ?></span></a>
+        </div>
+    </div>
+</div>
+<br/><br/><br/><br/><br/><br/>
+

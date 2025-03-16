@@ -1,0 +1,1091 @@
+<?php
+/**
+ * @author magefast@gmail.com www.magefast.com
+ */
+?>
+<?php
+$htmlpageBootstrapCheckoutData = $this->getLayout()->getBlock('htmlpageBootstrapCheckoutData');
+$cartId = $htmlpageBootstrapCheckoutData->getCartMaskedId();
+$novaPoshtaDetailsShippingUrl = $htmlpageBootstrapCheckoutData->getNovaPoshtaDetailsShippingUrl();
+$baseUrl = $htmlpageBootstrapCheckoutData->getBaseUrl();
+$cartUrl = $htmlpageBootstrapCheckoutData->getCartUrl();
+$restUrl = $htmlpageBootstrapCheckoutData->getRestUrl();
+$orderSuccessUrl = $htmlpageBootstrapCheckoutData->getOrderSuccessUrl();
+?>
+<?= /* @noEscape */
+$layoutContent; ?>
+<?php if (empty($cartId)): ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8"/>
+        <meta http-equiv="refresh" content="0; URL=<?= $cartUrl ?>"/>
+
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-N4NQBP083Q"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-N4NQBP083Q');
+        </script>
+
+        <meta name="google-site-verification" content="nNJBJSd8jxkbto7kcTnOkbvlDUxd-GjUvGpOBrG0Pvo" />
+
+    </head>
+    <body>
+    </body>
+    </html>
+<?php endif; ?>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= __('Checkouts') ?></title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <?php /* https://jsfiddle.net/7hqy0czg/ */ ?>
+    <script src="<?= $this->getViewFileUrl('Dragonfly_BootstrapCheckout::js/Bs5Utils.js') ?>"></script>
+
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="<?= $this->getViewFileUrl('Dragonfly_BootstrapCheckout::js/jquery.inputmask.js') ?>"></script>
+
+    <style>
+        .blur-content {
+            -webkit-filter: blur(5px);
+            -moz-filter: blur(5px);
+            -o-filter: blur(5px);
+            -ms-filter: blur(5px);
+            filter: blur(5px);
+            background-color: #ffffff;
+        }
+
+        .blur-content-unset {
+            filter: unset;
+            -webkit-filter: unset;
+            -moz-filter: unset;
+            -o-filter: unset;
+            -ms-filter: unset
+        }
+
+        #cart-discount-coupon-block {
+            width: 100%;
+            display: inline-block;
+        }
+
+        #cart-discount-coupon-block::before {
+            content: '<?= __('Coupon code') ?>: ';
+        }
+
+        #cart-discount-coupon-block::after {
+            content: '';
+        }
+
+        .btn-check:checked + .btn {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .comment-title::after {
+            content: ' ';
+            padding: 0 1rem;
+            background-image: url('<?= $this->getViewFileUrl('Dragonfly_BootstrapCheckout::images/dash.svg') ?>');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: contain;
+        }
+
+        .comment-title.collapsed::after {
+            content: ' ';
+            padding: 0 1rem;
+            background-image: url('<?= $this->getViewFileUrl('Dragonfly_BootstrapCheckout::images/plus.svg') ?>');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: contain;
+        }
+
+        #cart-payment-method-block .form-check,
+        #cart-shipping-method-block .form-check {
+            height: 100%;
+        }
+
+        #cart-payment-method-block .form-check label,
+        #cart-shipping-method-block .form-check label {
+            line-height: 100%;
+            height: 100%;
+            vertical-align: middle;
+            display: table;
+        }
+
+        #cart-payment-method-block .form-check label h5,
+        #cart-shipping-method-block .form-check label h5 {
+            vertical-align: middle;
+            line-height: 100%;
+            height: 100%;
+            display: table-cell;
+            padding: 0;
+            margin: 0;
+        }
+
+        .btn-check:checked + .btn.shipping-method-check-button,
+        .btn-check:checked + .btn.payment-method-check-button {
+            border-color: #198754;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(.375em + .1875rem) center;
+            background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+        }
+
+    </style>
+
+    <script>
+        const cartItems = '<?= $restUrl ?>guest-carts/<?= $cartId ?>';
+        const cartShippingMethods = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/shipping-methods';
+        const cartTotals = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/totals';
+        const cartCouponAdd = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/coupons/';
+        const cartSendContactDataAndGetShippingMethods = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/estimate-shipping-methods';
+        const cartSendShippingMethodsAndGetPaymentMethods = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/shipping-information';
+        const cartSendPaymentMethods = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/selected-payment-method';
+        const cartPlaceOrder = '<?= $restUrl ?>guest-carts/<?= $cartId ?>/order';
+
+        const shippingDetailsRegion = '<?= $novaPoshtaDetailsShippingUrl ?>region/get';
+        const shippingDetailsCity = '<?= $novaPoshtaDetailsShippingUrl ?>cities/get';
+        const shippingDetailsBranch = '<?= $novaPoshtaDetailsShippingUrl ?>branches/get';
+
+        const delayToast = 10000;
+        const idCartItemsBlock = '#cart_items';
+        const idCartShippingMethodsBlock = '#cart-shipping-method-block';
+        const idCartPaymentMethodsBlock = '#cart-payment-method-block';
+
+        const idFirstname = '#cart-contact-firstname-value';
+        const idLastname = '#cart-contact-lastname-value';
+        const idPhone = '#cart-contact-phone-value';
+        const idEmail = '#cart-contact-email-value';
+        const idOrderComment = '#order-comment-field';
+        const contactFields = [idFirstname, idLastname, idPhone, idEmail];
+
+        const regionSelectId = '#cart-shipping-details-method-novaposhtabranch_novaposhtabranch-region';
+        const citySelectId = '#cart-shipping-details-method-novaposhtabranch_novaposhtabranch-city';
+        const branchSelectId = '#cart-shipping-details-method-novaposhtabranch_novaposhtabranch-branch';
+
+        const infoSelectedRegion = '#npb-selected-region';
+        const infoSelectedCity = '#npb-selected-city';
+        const infoSelectedBranch = '#npb-selected-branch';
+        const selectedBranchInputId = '#npb-selected-branch-field';
+        const withoutPhoneCallValueInputId = '#without-phone-call-field';
+
+        const currencyText = ' грн';
+
+        window.selectedPayment = '';
+
+        jQuery(document).ready(function () {
+            const bs5Utils = new Bs5Utils();
+
+            getCartItems();
+            getCartTotals();
+            setContactInfo('', '', '', '');
+
+            phoneMask();
+
+
+            jQuery("#cart-coupon-add-button").click(function () {
+                let couponAddValue = jQuery("#cart-coupon-add-value").val();
+                let url = cartCouponAdd + couponAddValue;
+
+                jQuery.ajax({
+                    url: url,
+                    contentType: "application/json", type: 'PUT',
+                    success: function (result) {
+                        getCartTotals();
+                        getCartItems();
+                    },
+                    error: function (result) {
+                        let errorResponse = jQuery.parseJSON(result.responseText);
+                        // console.log(errorResponse.message);
+                        bs5Utils.Snack.show('danger', errorResponse.message, delayToast, true);
+                        getCartTotals();
+                        getCartItems();
+                    }
+                });
+            });
+
+            jQuery("#cart-place-order-button").click(function () {
+
+                jQuery(this).prop('disabled', true)
+
+                let fnv = fieldValue(idFirstname, false);
+                let lnv = fieldValue(idLastname, false);
+                let pv = fieldValue(idPhone, false);
+                let ev = fieldValue(idEmail, false);
+
+                /* validation */
+                if (!fnv || !lnv || !pv || ev === false) {
+                    jQuery(this).prop('disabled', false)
+                    bs5Utils.Snack.show('danger', '<?= __('Please fill all fields'); ?>', delayToast, true);
+                    return false;
+                }
+
+                let mscc = null;
+                let msmc = null;
+
+                jQuery(".shipping-method-check-value").each(function () {
+                    //console.log(jQuery(this).attr("data-carrier-code"));
+                    if (jQuery(this).is(":checked")) {
+                        mscc = jQuery(this).attr("data-carrier-code");
+                        msmc = jQuery(this).attr("data-method-code");
+                    }
+                });
+
+                if (!mscc || !msmc) {
+                    jQuery(this).prop('disabled', false)
+                    bs5Utils.Snack.show('danger', '<?= __('Please select Shipping method'); ?>', delayToast, true);
+                    return false;
+                }
+
+                let pmc = null;
+                jQuery(".payment-method-check-value").each(function () {
+                    //console.log(jQuery(this).val());
+                    if (jQuery(this).is(":checked")) {
+                        pmc = jQuery(this).val();
+                    }
+                });
+
+                if (!pmc) {
+                    jQuery(this).prop('disabled', false)
+                    bs5Utils.Snack.show('danger', '<?= __('Please select Payment method'); ?>', delayToast, true);
+                    return false;
+                }
+
+                let sp = jQuery(selectedBranchInputId).val()
+                let oc = jQuery(idOrderComment).val()
+
+                let checkShippingDetailsResult = checkShippingDetails(mscc, msmc);
+                if (checkShippingDetailsResult === false) {
+                    jQuery(this).prop('disabled', false)
+                    return false;
+                }
+
+                setShoppingInfoSetBeforePlaceOrder(mscc, msmc, fnv, lnv, pv, ev, '', '', sp, oc).done(function (data) {
+                    putPlaceOrder('#cart-place-order-button', bs5Utils)
+                }).fail(function () {
+                    jQuery(this).prop('disabled', false)
+                    bs5Utils.Snack.show('warning', '<?= __('Please check all data and try again'); ?>', delayToast, true);
+                });
+            });
+
+            /* validation */
+            $.each(contactFields, function (index, value) {
+                jQuery(value).focusout(function (t) {
+                    if (jQuery(value).hasClass('is-invalid')) {
+                        fieldValue(value);
+                    }
+                });
+            });
+
+            /* select shipping method */
+            jQuery(document).on('click', '.shipping-method-check-button', function (a) {
+                let checkedInputId = jQuery(this).attr('for');
+                let checkedInputElement = jQuery('#' + checkedInputId);
+                let smcs = checkedInputElement.attr("data-carrier-code");
+                let smsmc = checkedInputElement.attr("data-method-code");
+
+                if (checkedInputElement.is(":checked")) {
+                    /* @todo - if preselected onload */
+                }
+
+                /* ajax call */
+                let fn = fieldValue(idFirstname, false);
+                let ln = fieldValue(idLastname, false);
+                let p = fieldValue(idPhone, false);
+                let e = fieldValue(idEmail, false);
+
+                setShoppingInfo(smcs, smsmc, fn, ln, p, e);
+
+                showShippingDetails(smcs, smsmc);
+            });
+
+            /* select payment method */
+            jQuery(document).on('click', '.payment-method-check-button', function (a) {
+                let checkedInputId = jQuery(this).attr('for');
+                let checkedInputElement = jQuery('#' + checkedInputId);
+
+                if (checkedInputElement.is(":checked")) {
+                    /* @todo - if preselected onload */
+                }
+
+                let paymentMethodSelectedValue = checkedInputElement.val();
+                setPaymentInfo(paymentMethodSelectedValue);
+            });
+
+            function fieldValue(name, validate = true) {
+                let element = jQuery(name);
+                let value = element.val();
+
+                if (validate) {
+                    return value;
+                }
+
+                if (emptyField(value) && element.attr('required')) {
+                    addErrorValidation(element);
+                    return false;
+                }
+
+                if (element.attr('type') === 'tel') {
+                    let phoneRGEX = /^\(?(067|068|050|099|073|063)\)?(\s+)?[0-9]{3}-?[0-9]{2}-?[0-9]{2}$/;
+                    let phoneResult = phoneRGEX.test(value);
+                    if (!phoneResult) {
+                        addErrorValidation(element);
+                        return false;
+                    }
+                }
+
+                if (!emptyField(value) && element.attr('type') === 'email') {
+                    let emailRGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+                    let emailResult = emailRGEX.test(value);
+                    if (!emailResult) {
+                        addErrorValidation(element);
+                        return false;
+                    }
+                }
+
+                if (!emptyField(value)) {
+                    updateValidation(element);
+                }
+
+                return value;
+            }
+
+            function checkShippingDetails(shippingMethodSelectedCarrierCode, shippingMethodSelectedMethodCode) {
+                if (shippingMethodSelectedCarrierCode === 'novaposhtabranch'
+                    && shippingMethodSelectedMethodCode === 'novaposhtabranch') {
+                    let branchId = fieldValue(selectedBranchInputId, false);
+                    if (branchId === false || branchId === '') {
+                        bs5Utils.Snack.show('danger', '<?= __('Please fill all fields for Nova Poshta Branch'); ?>', delayToast, true);
+                        return false;
+                    }
+                }
+            }
+
+        });
+
+        function showShippingDetails(carrier, method) {
+            jQuery(".cart-shipping-details").each(function () {
+                if (jQuery(this).hasClass('d-block')) {
+                    jQuery(this).removeClass('d-block');
+                }
+                jQuery(this).addClass('d-none');
+            });
+
+            jQuery("#cart-shipping-details-method-" + carrier + "_" + method).addClass('d-block');
+            jQuery("#cart-shipping-details-method-" + carrier + "_" + method).removeClass('d-none');
+
+            loadDataMethodDetails(carrier, method);
+        }
+
+        function loadDataMethodDetails(carrier, method) {
+            if (carrier + '_' + method === 'novaposhtabranch_novaposhtabranch') {
+                getRegion();
+            }
+        }
+
+        function getRegion() {
+            updateSelectedNpDetails('', '', '', '');
+
+            let regionSelectId = '#cart-shipping-details-method-novaposhtabranch_novaposhtabranch-region';
+            loadNovaPoshtaDetails('region', regionSelectId)
+        }
+
+        function getCity() {
+            updateSelectedNpDetails('', '', '', '');
+
+            let selectedRegion = jQuery(regionSelectId).val();
+
+            loadNovaPoshtaDetails('city', citySelectId, selectedRegion);
+
+            jQuery(citySelectId).prop('disabled', false)
+
+            jQuery(branchSelectId + ' option:not(:first)').remove();
+            jQuery(branchSelectId).prop('disabled', true)
+        }
+
+        function getBranch() {
+            updateSelectedNpDetails('', '', '', '');
+
+            let selectedRegion = jQuery(citySelectId).val();
+
+            loadNovaPoshtaDetails('branch', branchSelectId, selectedRegion);
+
+            jQuery(branchSelectId).prop('disabled', false)
+        }
+
+        function setBranch(b) {
+            let region = jQuery(regionSelectId).find('option:selected').text();
+            let city = jQuery(citySelectId).find('option:selected').text();
+            let branch = jQuery(branchSelectId).find('option:selected').text();
+            let branchId = jQuery(branchSelectId).find('option:selected').val();
+
+            updateSelectedNpDetails(region, city, branch, branchId);
+        }
+
+        function updateSelectedNpDetails(region, city, branch, id) {
+            if (id === '') {
+                region = '';
+                city = '';
+                branch = '';
+            }
+            jQuery(infoSelectedRegion).html(region);
+            jQuery(infoSelectedCity).html(city);
+            jQuery(infoSelectedBranch).html(branch);
+            jQuery(selectedBranchInputId).val(id);
+        }
+
+        function loadNovaPoshtaDetails(type, id, value = '') {
+            jQuery(id + ' option:not(:first)').remove();
+
+            if (type === 'region') {
+                jQuery.ajax({
+                    url: shippingDetailsRegion,
+                    contentType: "application/json", type: 'GET',
+                    success: function (result) {
+                        //console.log(JSON.stringify(result))
+                        selectAppendData(result, id);
+                    }
+                });
+            }
+
+            if (type === 'city') {
+                jQuery.ajax({
+                    url: shippingDetailsCity + '?region_id=' + value,
+                    contentType: "application/json", type: 'GET',
+                    success: function (result) {
+                        //console.log(JSON.stringify(result))
+                        selectAppendData(result, id);
+                    }
+                });
+            }
+
+            if (type === 'branch') {
+                jQuery.ajax({
+                    url: shippingDetailsBranch + '?city_id=' + value,
+                    contentType: "application/json", type: 'GET',
+                    success: function (result) {
+                        //console.log(JSON.stringify(result))
+                        selectAppendData(result, id);
+                    }
+                });
+            }
+        }
+
+        function selectAppendData(data, id = '') {
+            jQuery.each(data, function (key, value) {
+                let disabled = '';
+                if (value.disabled && value.disabled === true) {
+                    disabled = 'disabled';
+                    return;
+                }
+                jQuery(id).append(`<option value="${value.id}" ${disabled}>${value.name}</option>`);
+            });
+        }
+
+        function phoneMask() {
+            jQuery(function (jQuery) {
+                let phoneField = jQuery(idPhone);
+                if (phoneField !== null) {
+                    phoneField.inputmask("mask", {"mask": "(099) 999-9999", placeholder: "_"});
+                }
+            });
+        }
+
+        function emptyField(value) {
+            return value.length === 0;
+        }
+
+        function addErrorValidation(element) {
+            if (element.hasClass('is-valid')) {
+                element.removeClass('is-valid');
+            }
+            element.addClass('is-invalid');
+        }
+
+        function updateValidation(element) {
+            if (element.hasClass('is-invalid')) {
+                element.removeClass('is-invalid');
+            }
+            element.addClass('is-valid');
+        }
+
+        function getCartItems() {
+            jQuery.ajax({
+                url: cartItems,
+                contentType: "application/json", type: 'GET',
+                success: function (result) {
+                    //console.log(JSON.stringify(result))
+                    renderItems(result.items);
+                }
+            });
+        }
+
+        function renderItems(data) {
+            $(idCartItemsBlock).html('');
+            $.each(data, function (index, value) {
+                $(idCartItemsBlock).append(cartItemTemplate(value));
+            });
+        }
+
+        function setShoppingInfo(smcs, smsmc, fn, ln, t, e = '', r = '', c = '', sp = '', oc = '') {
+            let wpc = 0;
+            if (jQuery(withoutPhoneCallValueInputId).is(':checked')) {
+                wpc = 1;
+            }
+
+            jQuery.ajax({
+                url: cartSendShippingMethodsAndGetPaymentMethods,
+                contentType: "application/json", type: 'POST',
+                data: JSON.stringify(
+                    {
+                        addressInformation: {
+                            shipping_method_code: smsmc,
+                            shipping_carrier_code: smcs,
+                            shipping_address: prepareAddressData(fn, ln, t, e, c, r),
+                            billing_address: prepareAddressData(fn, ln, t, e, c, r),
+                            extension_attributes: {
+                                "shipping_point": sp,
+                                "order_comment": oc,
+                                "without_phone_call": wpc
+                            }
+                        }
+                    }),
+                success: function (result) {
+                    renderPaymentsMethods(result.payment_methods);
+                    setCartTotalContent(result.totals);
+                }
+            });
+        }
+
+        function setShoppingInfoSetBeforePlaceOrder(smcs, smsmc, fn, ln, t, e = '', r = '', c = '', sp = '', oc = '') {
+            let wpc = 0;
+            if (jQuery(withoutPhoneCallValueInputId).is(':checked')) {
+                wpc = 1;
+            }
+
+            return jQuery.ajax({
+                url: cartSendShippingMethodsAndGetPaymentMethods,
+                contentType: "application/json", type: 'POST',
+                data: JSON.stringify(
+                    {
+                        addressInformation: {
+                            shipping_method_code: smsmc,
+                            shipping_carrier_code: smcs,
+                            shipping_address: prepareAddressData(fn, ln, t, e, c, r),
+                            billing_address: prepareAddressData(fn, ln, t, e, c, r),
+                            extension_attributes: {
+                                "shipping_point": sp,
+                                "order_comment": oc,
+                                "without_phone_call": wpc
+                            }
+                        }
+                    }),
+                success: function (result) {
+                    //
+                }
+            });
+        }
+
+        function setPaymentInfo(method) {
+            window.selectedPayment = method;
+
+            jQuery.ajax({
+                url: cartSendPaymentMethods,
+                contentType: "application/json", type: 'PUT',
+                data: JSON.stringify(
+                    {
+                        "method": {
+                            "method": method
+                        }
+                    }),
+                success: function (result) {
+                    //console.log(JSON.stringify(result))
+                }
+            });
+        }
+
+        function putPlaceOrder(btnId, bs5Utils) {
+            return jQuery.ajax({
+                url: cartPlaceOrder,
+                contentType: "application/json", type: 'PUT',
+                success: function (result) {
+                    //console.log(JSON.stringify(result))
+                    //@todo redirect to Success page
+                    afterPlaceOrder();
+                },
+                error: function (result) {
+                    if (result && result.responseText && result.responseText !== '') {
+                        let errorResponse = jQuery.parseJSON(result.responseText);
+                        // console.log(errorResponse.message);
+                        bs5Utils.Snack.show('danger', errorResponse.message, delayToast, true);
+                    } else {
+                        bs5Utils.Snack.show('warning', '<?= __('Please check all data and try again'); ?>', delayToast, true);
+                    }
+                    jQuery(btnId).prop('disabled', false)
+                }
+            });
+        }
+
+        function afterPlaceOrder() {
+            if (window.selectedPayment === 'liqpaymagento_liqpay') {
+                afterPlaceOrderLiqpay();
+            } else {
+                window.location = "<?= $orderSuccessUrl ?>";
+            }
+        }
+
+        function setContactInfo(firstname, lastname, telephone, email = '', region = '', company = '') {
+            jQuery.ajax({
+                url: cartSendContactDataAndGetShippingMethods,
+                contentType: "application/json", type: 'POST',
+                data: JSON.stringify(
+                    {
+                        address: prepareAddressData(firstname, lastname, telephone, email, company, region)
+                    }),
+                success: function (result) {
+                    //console.log(JSON.stringify(result))
+                    renderShippingMethods(result);
+                }
+            });
+        }
+
+        function renderShippingMethods(data) {
+            $(idCartShippingMethodsBlock).html('');
+            $.each(data, function (index, value) {
+                $(idCartShippingMethodsBlock).append(cartShippingMethodTemplate(value));
+            });
+        }
+
+        function renderPaymentsMethods(data) {
+            $(idCartPaymentMethodsBlock).html('');
+            $.each(data, function (index, value) {
+                $(idCartPaymentMethodsBlock).append(cartPaymentMethodTemplate(value));
+            });
+        }
+
+        function getShippingMethods() {
+            jQuery.ajax({
+                url: cartShippingMethods,
+                contentType: "application/json", type: 'GET',
+                success: function (result) {
+                    //console.log(JSON.stringify(result))
+                }
+            });
+        }
+
+        function getCartTotals() {
+            jQuery.ajax({
+                url: cartTotals,
+                contentType: "application/json", type: 'GET',
+                success: function (result) {
+                    //console.log(JSON.stringify(result))
+                    setCartTotalContent(result);
+                    setVisibleCart();
+                }
+            });
+        }
+
+        function setVisibleCart() {
+            jQuery('#cart-div').removeClass('blur-content');
+        }
+
+        function setCartTotalContent(value) {
+            let cartSubtotalValue = jQuery("#cart-subtotal-value");
+            let cartShippingValue = jQuery("#cart-shipping-value");
+            let cartShippingBlock = jQuery("#cart-shipping-block");
+            let cartGrandtotalValue = jQuery("#cart-grandtotal-value");
+
+            let cartDiscountBlock = jQuery("#cart-discount-block");
+            let cartDiscountValue = jQuery("#cart-discount-value");
+            let cartDiscountCodeBlock = jQuery("#cart-discount-coupon-block");
+
+            cartSubtotalValue.text(value.subtotal + currencyText);
+            cartShippingValue.text(value.shipping_amount + currencyText);
+            cartGrandtotalValue.text(value.grand_total + currencyText)
+
+            if (value.shipping_amount === 0) {
+                if (!cartShippingBlock.hasClass('d-none')) {
+                    cartShippingBlock.addClass('d-none');
+                }
+            } else {
+                if (cartShippingBlock.hasClass('d-none')) {
+                    cartShippingBlock.removeClass('d-none');
+                }
+            }
+
+            if (value.discount_amount === 0) {
+                cartDiscountValue.text('');
+                cartDiscountBlock.addClass('d-none');
+            } else {
+                if (cartDiscountBlock.hasClass('d-none')) {
+                    cartDiscountBlock.removeClass('d-none');
+                }
+                cartDiscountValue.text(value.discount_amount);
+                cartDiscountCodeBlock.text(value.coupon_code);
+            }
+        }
+
+        /* template */
+        function prepareAddressData(f, l, t, e, c, r) {
+            if (e === '') {
+                e = 'test@test.com';
+            }
+
+            return {
+                "firstname": f,
+                "lastname": l,
+                "telephone": t,
+                "email": e,
+                "company": c,
+                "region": r,
+                "street": ["-"],
+                "city": "-",
+                "postcode": "-",
+                "country_id": "UA"
+            }
+        }
+
+        function cartItemTemplate(value) {
+            let h =
+                '<div class="d-flex align-items-center mb-4">' +
+                '<div class="me-3 position-relative">' +
+                '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill badge-secondary">1</span>' +
+                '<img src="' + value.extension_attributes.image_url + '" alt="' + value.name + '" style="height: 96px; width: 96px;" class="img-sm rounded border" />' +
+                '</div>' +
+                '<div class=""><a href="#" class="nav-link">' + value.name + '</a><div class="price text-muted">' + value.price + currencyText + '</div></div>' +
+                '</div>';
+            return '' + h;
+        }
+
+        function cartShippingMethodTemplate(value) {
+            let h =
+                '<div class="col-lg-4 mb-3">' +
+                '<div class="form-check border rounded-3 p-0">' +
+
+                '<input class="btn-check shipping-method-check-value" autocomplete="off" type="radio" name="shipping-method-value" data-carrier-code="' + value.carrier_code + '" data-method-code="' + value.method_code + '" value="' + value.carrier_code + '_' + value.method_code + '" id="shippingMethod' + value.carrier_code + '_' + value.method_code + '">' +
+                '<label class="btn w-100 shipping-method-check-button" for="shippingMethod' + value.carrier_code + '_' + value.method_code + '">' +
+                '<h5>' + value.method_title + '</h5>' +
+                '</label>' +
+
+                '</div>' +
+                '</div>';
+            return '' + h;
+        }
+
+        function cartPaymentMethodTemplate(value) {
+            let h =
+                '<div class="col-lg-4 mb-3">' +
+                '<div class="form-check border rounded-3 p-0">' +
+                '<input class="btn-check payment-method-check-value" autocomplete="off" type="radio" name="payment-method-value" value="' + value.code + '" id="paymentMethod' + value.code + '">' +
+                '<label class="btn w-100 payment-method-check-button" for="paymentMethod' + value.code + '">' +
+                '<h5>' + value.title + '</h5>' +
+                '</label>' +
+
+                '</div>' +
+                '</div>';
+            return '' + h;
+        }
+
+        function afterPlaceOrderLiqpay() {
+            let urlPostForm = '<?= $baseUrl ?>/liqpay/checkout/form';
+            jQuery.post(urlPostForm, {
+                'random_string': this._generateRandomString(30)
+            }).done(function (data) {
+                if (!data.status) {
+                    return
+                }
+                if (data.status === 'success') {
+                    if (data.content) {
+                        let html = '<div id="liqPaySubmitFrom" style="display: none;">' + data.content + '</div>';
+                        jQuery('body').append(html);
+                        jQuery('#liqPaySubmitFrom form:first').submit();
+                    }
+                } else {
+                    if (data.redirect) {
+                        window.location = data.redirect;
+                    }
+                }
+            });
+        }
+
+        function _generateRandomString(length) {
+            if (!length) {
+                length = 10;
+            }
+            let text = '';
+            let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            for (let i = 0; i < length; ++i) {
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+            }
+            return text;
+        }
+    </script>
+
+
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N4NQBP083Q"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-N4NQBP083Q');
+    </script>
+
+    <meta name="google-site-verification" content="nNJBJSd8jxkbto7kcTnOkbvlDUxd-GjUvGpOBrG0Pvo" />
+
+
+</head>
+<body>
+<header>
+    <div class="p-3 text-center bg-white border-bottom">
+        <div class="container">
+            <div class="d-flex justify-content-between">
+                <div class="">
+                    <a href="<?= $htmlpageBootstrapCheckoutData->escapeUrl($htmlpageBootstrapCheckoutData->getUrl('')) ?>">
+                        <img src="<?= $htmlpageBootstrapCheckoutData->getLogoSrc() ?>" height="35"/>
+                    </a>
+                </div>
+
+                <h1 class="h4 px-0"><?= __('Checkouts'); ?></h1>
+
+                <?php /*<div class="">
+                    <a href="https://github.com/mdbootstrap/bootstrap-material-design"
+                       class="me-1 border rounded py-1 px-3 nav-link" target="_blank"> <i
+                            class="fas fa-user-alt me-2"></i>Sign in </a>
+                </div>*/ ?>
+            </div>
+        </div>
+    </div>
+</header>
+
+<section class="bg-light py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-xl-8 col-lg-8 mb-4 p-0 p-md-3">
+                <!-- Checkout -->
+                <div class="card shadow-0 border-0">
+                    <div class="p-3 p-md-4">
+                        <h5 class="card-title mb-3"><?= __('Contact Information') ?></h5>
+                        <div class="row" id="cart-contact-block">
+
+                            <div class="col-12 col-md-6 mb-3">
+                                <p class="mb-0"><?= __('First Name') ?></p>
+                                <div class="form-outline">
+                                    <input type="text"
+                                           required
+                                           id="cart-contact-firstname-value"
+                                           dete-placeholder="Type here"
+                                           class="form-control"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-3">
+                                <p class="mb-0"><?= __('Last Name') ?></p>
+                                <div class="form-outline">
+                                    <input type="text"
+                                           required
+                                           id="cart-contact-lastname-value"
+                                           data-placeholder="Type here"
+                                           class="form-control"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-3">
+                                <p class="mb-0"><?= __('Phone') ?></p>
+                                <div class="form-outline">
+                                    <input type="tel"
+                                           required
+                                           id="cart-contact-phone-value"
+                                           value=""
+                                           placeholder="(099) 999-99-99"
+                                           pattern="^\+38(\s+)?\(?(067|068|050|099|073|063)\)?(\s+)?[0-9]{3}-?[0-9]{2}-?[0-9]{2}$"
+                                           class="form-control"/>
+                                </div>
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" value="1" type="checkbox" role="switch"
+                                           id="without-phone-call-field">
+                                    <label class="form-check-label"
+                                           for="without-phone-call-field"><?= __('No Phone call'); ?></label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-6 mb-3">
+                                <p class="mb-0"><?= __('Email') ?></p>
+                                <div class="form-outline">
+                                    <input type="email"
+                                           id="cart-contact-email-value"
+                                           placeholder="example@gmail.com"
+                                           class="form-control"/>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <hr class="my-4"/>
+
+                        <h5 class="card-title mb-3"><?= __('Shipping Methods') ?></h5>
+                        <div class="row">
+                            <div class="row mb-3 p-0 mx-auto" id="cart-shipping-method-block"></div>
+                        </div>
+
+                        <div class="row d-none cart-shipping-details"
+                             id="cart-shipping-details-method-novaposhtabranch_novaposhtabranch">
+                            <h5 class="card-title mb-3"><?= __('Shipping information details') ?></h5>
+                            <div class="row mx-auto">
+                                <div class="col-md-6 p-0">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="form-group mb-4">
+                                                <label class="block"><?= __('Region') ?>:</label>
+                                                <select
+                                                    class='form-control w-full lg:w-2/4 border rounded-lg shadow-sm p-2 focus:outline-none border-gray-300'
+                                                    id="cart-shipping-details-method-novaposhtabranch_novaposhtabranch-region"
+                                                    onchange="getCity(this)">
+                                                    <option value='0'><?= __('Select Region') ?></option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-4">
+                                                <label class="block"><?= __('City') ?>:</label>
+                                                <select
+                                                    class="form-control w-full lg:w-2/4 border rounded-lg shadow-sm p-2 focus:outline-none border-gray-300"
+                                                    disabled
+                                                    id="cart-shipping-details-method-novaposhtabranch_novaposhtabranch-city"
+                                                    onchange="getBranch(this)">
+                                                    <option value='0'><?= __('Select City') ?></option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group mb-1">
+                                                <label class="block"><?= __('Branch') ?>:</label>
+                                                <select
+                                                    class="form-control w-full lg:w-2/4 border rounded-lg shadow-sm p-2 focus:outline-none border-gray-300"
+                                                    disabled
+                                                    id="cart-shipping-details-method-novaposhtabranch_novaposhtabranch-branch"
+                                                    onchange="setBranch(this)">
+                                                    <option value=''><?= __('Select Branch') ?></option>
+                                                </select>
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <input id="npb-selected-branch-field" type="hidden" value=""/>
+
+                                    <div class="npb-selected">
+                                        <ul class="list-group list-group-flush">
+                                            <li class="font-bold list-group-item border-0"
+                                                id="npb-selected-region"></li>
+                                            <li class="font-bold list-group-item  border-0" id="npb-selected-city"></li>
+                                            <li class="font-bold list-group-item border-0"
+                                                id="npb-selected-branch"></li>
+                                        </ul>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row d-none cart-shipping-details"
+                             id="cart-shipping-details-method-novaposhtabranch_novaposhtakurier">
+                            <h5 class="card-title mb-3"><?= __('Shipping information details') ?></h5>
+
+                            <div class="col-sm-12 mb-3">
+                                <p class="mb-0">Address Shipping</p>
+                                <div class="form-outline">
+                                    <input type="text" id="typeText" data-placeholder="Type here" class="form-control"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4"/>
+                        <h5 class="card-title mb-3"><?= __('Checkout Payment Methods') ?></h5>
+                        <div class="row">
+                            <div class="row mb-3 p-0 mx-auto" id="cart-payment-method-block"></div>
+                        </div>
+                        <hr class="my-4"/>
+
+                        <h5 class="card-title mb-3 comment-title collapsed"
+                            data-bs-toggle="collapse"
+                            href="#collapseComment"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="collapseComment"><?= __('Message to seller') ?>
+                        </h5>
+                        <div class="row collapse" id="collapseComment">
+                            <div class="form-outline">
+                                <textarea class="form-control" id="order-comment-field" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- Checkout -->
+            </div>
+
+            <div class="col-xl-4 col-lg-4 pt-1 pt-md-4 d-flex justify-content-center justify-content-lg-end">
+                <div class="ms-lg-4 mt-4 mt-lg-0 blur-content" id="cart-div" style="max-width: 320px;">
+                    <h6 class="mb-3"><?= __('Summary') ?></h6>
+                    <div class="d-flex justify-content-between">
+                        <p class="mb-2"><?= __('Subtotal') ?>:</p>
+                        <p class="mb-2" id="cart-subtotal-value"></p>
+                    </div>
+                    <div class="d-flex justify-content-between d-none" id="cart-discount-block">
+                        <p class="mb-2"><?= __('Discount') ?>:
+                            <span id="cart-discount-coupon-block"></span>
+                        </p>
+                        <p class="mb-2 text-danger" id="cart-discount-value"></p>
+                    </div>
+                    <div class="d-flex justify-content-between d-none" id="cart-shipping-block">
+                        <p class="mb-2"><?= __('Shipping & Handling') ?>:</p>
+                        <p class="mb-2" id="cart-shipping-value"></p>
+                    </div>
+                    <hr/>
+                    <div class="d-flex justify-content-between">
+                        <p class="mb-2"><?= __('Grand Total') ?>:</p>
+                        <p class="mb-2 fw-bold" id="cart-grandtotal-value"></p>
+                    </div>
+
+                    <div class="input-group mt-3 mb-4">
+                        <input type="text"
+                               id="cart-coupon-add-value"
+                               class="form-control border"
+                               name=""
+                               placeholder="<?= __('Promo code') ?>"/>
+                        <button class="btn btn-light text-primary border"
+                                id="cart-coupon-add-button"><?= __('Apply') ?>
+                        </button>
+                    </div>
+
+                    <div class="input-group mt-3 mb-4">
+                        <button class="btn btn-lg btn-success shadow-0 border w-100"
+                                id="cart-place-order-button"><?= __('Add Order') ?></button>
+                    </div>
+
+                    <hr/>
+                    <h6 class="text-dark my-4"><?= __('Items in cart') ?></h6>
+                    <div class="d-block" id="cart_items"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<footer class="text-center text-lg-start text-muted bg-primary mt-3"></footer>
+
+</body>
+</html>

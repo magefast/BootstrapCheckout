@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+  ~ @author magefast@gmail.com www.magefast.com
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <virtualType name="htmlpageBootstrapCheckoutResultPage" type="Magento\Framework\View\Result\Page">
+        <arguments>
+            <argument name="template" xsi:type="string">Dragonfly_BootstrapCheckout::root.phtml</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="htmlpageBootstrapCheckoutResultPageFactory" type="Magento\Framework\View\Result\PageFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">htmlpageBootstrapCheckoutResultPage</argument>
+        </arguments>
+    </virtualType>
+    <type name="Dragonfly\BootstrapCheckout\Controller\Index\Index">
+        <arguments>
+            <argument name="resultPageFactory" xsi:type="object">htmlpageBootstrapCheckoutResultPageFactory</argument>
+        </arguments>
+    </type>
+</config>
